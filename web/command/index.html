@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#050507" />
+  <title>VanRakshak AI — Satellite Forest Intelligence Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Roboto+Serif:ital,opsz,wght@0,8..144,300;0,8..144,400;0,8..144,600;0,8..144,700;1,8..144,400&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap">
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    
+    <header class="topbar">
+      <button class="brand" id="brandHome" aria-label="VanRakshak home">
+        <span class="brand-mark">🌿</span>
+        <span class="brand-copy">
+          <strong>VanRakshak <em>AI</em></strong>
+          <small>SATELLITE FOREST INTELLIGENCE COMMAND</small>
+        </span>
+      </button>
+
+      <div class="search-shell">
+        <span class="search-icon">⌕</span>
+        <input id="searchBox" autocomplete="off" placeholder="Search forest reserve, state, coordinates or ask AI…" />
+        <button id="searchBtn" class="voice-btn" title="Search">↵</button>
+      </div>
+
+      <nav class="top-nav" aria-label="Primary">
+        <!-- Telemetry Badges matching The Race to Save Space -->
+        <button id="tempToggle" class="hud-pill" title="Toggle temperature units">
+          <span class="pulse-dot"></span>
+          <span id="tempValue">TEMP: 28.4° C</span>
+        </button>
+
+        <button id="healthBtn" class="hud-pill" title="Satellite Telemetry and Sources Health">
+          <span>ORBIT: 786 KM</span>
+        </button>
+
+        <button id="soundToggle" class="hud-pill" title="Toggle audio soundtrack">
+          <span>SOUND: <b id="soundLabel">OFF</b></span>
+        </button>
+
+        <button id="liveDataTop" class="nav-link">Live Data</button>
+        <button id="analyticsTop" class="nav-link">Analytics</button>
+        <button id="reportsTop" class="nav-link">Reports</button>
+        <button id="aboutTop" class="nav-link">About</button>
+        
+        <a href="../index.html" class="cta-return" style="text-decoration:none;">
+          ← Space Odyssey
+        </a>
+      </nav>
+    </header>
+
+
+    <aside class="sidebar">
+      <button class="nav active" data-nav="map"><span class="nav-icon">🗺</span><span>Map</span></button>
+      <button class="nav" data-nav="trends"><span class="nav-icon">🔬</span><span>Earth Trends</span></button>
+      <button class="nav" data-nav="statlab"><span class="nav-icon">🧪</span><span>Statistical Lab</span></button>
+      <button class="nav" data-nav="cmr"><span class="nav-icon">🔍</span><span>NASA CMR</span></button>
+      <button class="nav" data-nav="correlations"><span class="nav-icon">⚖️</span><span>Correlations</span></button>
+
+      <button class="nav" data-nav="forest"><span class="nav-icon">♧</span><span>Forest Cover</span></button>
+      <button class="nav" data-nav="alerts"><span class="nav-icon">♢</span><span>Alerts</span><b id="navAlertBadge" class="nav-badge">—</b></button>
+      <button class="nav" data-nav="analysis"><span class="nav-icon">▥</span><span>Analysis</span></button>
+      <button class="nav" data-nav="weather"><span class="nav-icon">☁</span><span>Weather</span></button>
+      <button class="nav" data-nav="fire"><span class="nav-icon">♨</span><span>Fire & Heat</span></button>
+      <button class="nav" data-nav="soil"><span class="nav-icon">◉</span><span>Soil & Terrain</span></button>
+      <button class="nav" data-nav="predictions"><span class="nav-icon">⌁</span><span>Predictions</span></button>
+      <button class="nav" data-nav="patrol"><span class="nav-icon">⌁</span><span>Patrol Planner</span></button>
+      <button class="nav" data-nav="reports"><span class="nav-icon">▤</span><span>Reports</span></button>
+
+      <button id="aiAssistantBtn" class="assistant-card">
+        <span class="assistant-icon">🤖</span>
+        <span><strong>AI Assistant</strong><small>Ask anything about India's forests…</small></span>
+      </button>
+    </aside>
+
+    <main class="workspace">
+      <section class="left-stack">
+        <section class="map-card">
+          <div class="map-pills" id="mapPills">
+            <button class="map-pill active" data-quick="satellite">▣ <span>Satellite</span></button>
+            <select id="satelliteModeQuick" class="map-mode-select" aria-label="Satellite rendering mode">
+              <option value="true_color">True Color</option>
+              <option value="false_color">False Color</option>
+              <option value="ndvi">NDVI</option>
+              <option value="ndmi">NDMI</option>
+              <option value="nbr">NBR</option>
+              <option value="ndwi">NDWI</option>
+            </select>
+            <button class="map-pill" data-quick="forest">🌲 <span>Forest Cover</span></button>
+            <button class="map-pill" data-quick="ndvi">● <span>NDVI</span></button>
+            <button class="map-pill" data-quick="fire">🔥 <span>Fire</span></button>
+            <button class="map-pill" data-quick="temperature">♨ <span>Temperature</span></button>
+            <button class="map-pill layers-pill" id="layersBtn" title="All layers">▰</button>
+          </div>
+          <div id="map"></div>
+          <div class="map-legend" id="mapLegend">
+            <div class="legend-title-row"><strong id="mapLegendTitle">Satellite</strong><small id="mapLegendMeta">(true color)</small></div>
+            <div id="mapLegendGradient" class="legend-gradient satellite-gradient"></div>
+            <div id="mapLegendTicks" class="legend-ticks"><span>Natural</span><span>Earth imagery</span></div>
+            <small id="mapStatus">Click the map or search for a forest region</small>
+          </div>
+        </section>
+
+        <section class="bottom-analytics" id="analyticsSection">
+          <div class="summary-row">
+            <article class="summary-card"><span class="summary-icon tree">🌲</span><div><small>Selected Region</small><strong id="sumRegion">Kodagu</strong><em id="sumRegionSub">Karnataka, India</em></div></article>
+            <article class="summary-card"><span class="summary-icon alert">⚠</span><div><small>Warning Score</small><strong id="sumAlerts">—</strong><em id="sumAlertsDelta">Evidence-normalized</em></div></article>
+            <article class="summary-card"><span class="summary-icon critical">●</span><div><small>Critical Status</small><strong id="sumCritical">—</strong><em id="sumCriticalDelta">Selected AOI</em></div></article>
+            <article class="summary-card"><span class="summary-icon fire">🔥</span><div><small>Fire Hotspots (24h)</small><strong id="sumFire">—</strong><em id="sumFireDelta">NASA FIRMS</em></div></article>
+            <article class="summary-card"><span class="summary-icon risk">⚠</span><div><small>Source Health</small><strong id="sumSources">—</strong><em id="sumSourcesDelta">Configured providers</em></div></article>
+          </div>
+
+          <div class="charts-row">
+            <article class="chart-card trend-card">
+              <div class="chart-head"><div><strong>Forest Change Trend</strong><small id="trendSubtitle">Selected region • Sentinel-2</small></div><div class="chart-controls"><span>NDVI / Forest fraction</span><span>Recent observations</span></div></div>
+              <div id="forestTrendChart" class="chart"></div>
+            </article>
+            <article class="chart-card signals-card">
+              <div class="chart-head"><div><strong>Threat Signals (Top 5)</strong><small>Current evidence contributions</small></div></div>
+              <div id="signalBars" class="signal-bars"><div class="empty-state">Run analysis to populate source-backed signals.</div></div>
+            </article>
+          </div>
+        </section>
+      </section>
+
+      <aside id="inspector" class="right-panel">
+        <header class="region-head">
+          <div id="regionThumb" class="region-thumb">🌲</div>
+          <div class="region-copy"><h1 id="regionTitle">Kodagu Forest Region</h1><p id="coords">Karnataka, India</p><span id="dataModeBadge" class="data-mode-badge">REAL SOURCES • LOADING</span></div>
+          <div class="severity-box"><b id="severityBadge" class="severity critical">ANALYZING</b><small id="incidentId">VR-LIVE</small></div>
+        </header>
+
+        <div class="right-tabs">
+          <button class="right-tab active" data-tab="overview">Overview</button>
+          <button class="right-tab" data-tab="trends">🔬 Earth Trends</button>
+          <button class="right-tab" data-tab="statlab">🧪 Statistical Lab</button>
+          <button class="right-tab" data-tab="cmr">🛰️ NASA CMR</button>
+          <button class="right-tab" data-tab="correlations">⚖️ Correlations</button>
+          <button class="right-tab" data-tab="before">Before / After</button>
+          <button class="right-tab" data-tab="analysis">Analysis</button>
+          <button class="right-tab" data-tab="environment">Environmental</button>
+          <button class="right-tab" data-tab="news">News & Reports</button>
+        </div>
+
+        <section id="tab-overview" class="right-panel-view active">
+          <div class="metric-strip">
+            <article><strong id="areaAffected">—</strong><small>Area Affected</small></article>
+            <article><strong id="aiConfidence">—</strong><small>AI Confidence</small></article>
+            <article><strong id="ndviChange" class="danger-text">—</strong><small>NDVI Change</small></article>
+            <article><strong id="riskScore" class="danger-text">—</strong><small>Risk Score</small></article>
+          </div>
+
+          <div class="inline-compare-card">
+            <div id="inlineBefore" class="inline-map"></div>
+            <div id="inlineAfterWrap" class="inline-after-wrap"><div id="inlineAfter" class="inline-map"></div></div>
+            <input id="inlineCompareSlider" type="range" min="5" max="95" value="50" aria-label="Before after split" />
+            <span class="before-label">Before<br><small id="beforeInlineDate">—</small></span>
+            <span class="after-label">After<br><small id="afterInlineDate">—</small></span>
+            <button id="expandCompare" class="expand-btn" title="Open full before / after">⛶</button>
+          </div>
+
+          <article class="cause-card">
+            <div class="cause-half"><h3>▣ Probable Cause <small>(AI Analysis)</small></h3><div id="causeBars" class="cause-bars"><div class="empty-state">Waiting for source-backed evidence.</div></div></div>
+            <div class="evidence-half"><h3>Key Evidence</h3><div id="keyEvidence" class="key-evidence"><div class="empty-state">Gathering evidence…</div></div></div>
+          </article>
+
+          <div class="impact-strip">
+            <article><span>🌿</span><div><small>Carbon Impact <b>(Estimated)</b></small><strong id="carbonImpact">—</strong><em id="carbonImpactSub">tCO₂e</em></div></article>
+            <article><span>🛡</span><div><small>Protected Area</small><strong id="protectedStatus">—</strong><em id="protectedSub">Protected-area context</em></div></article>
+            <article><span>🌱</span><div><small>Vegetation Condition</small><strong id="vegetationStatus">—</strong><em id="vegetationSub">NDVI / Sentinel-2</em></div></article>
+            <article><span>⌘</span><div><small>Fragmentation</small><strong id="fragmentationStatus">—</strong><em id="fragmentationSub">Patch / edge change</em></div></article>
+          </div>
+
+          <article class="detail-card action-plan-card">
+            <div class="action-plan-head"><div><h3>Recommended Response Plan</h3><p>What to do, where to act, how to respond, and how to verify impact.</p></div><span id="actionPlanRisk" class="action-risk">Waiting for analysis</span></div>
+            <div id="actionPlanOverview" class="action-plan-list"><div class="empty-state">Run source-backed analysis to generate operational actions.</div></div>
+            <div id="actionPlanOutcome" class="action-plan-outcome">Expected impact will be shown as measurable validation targets, not guaranteed percentages.</div>
+          </article>
+
+          <div class="action-row major-actions">
+            <button id="reportBtn" class="action-btn green">▤ Generate Full Report</button>
+            <button id="viewOnMapBtn" class="action-btn blue">● View on Map</button>
+            <button id="patrolBtn" class="action-btn blue">⌁ Plan Patrol Route</button>
+            <button id="sendAlertBtn" class="action-btn alert-action">⚠ Send Patrol Alert</button>
+          </div>
+
+          <article class="live-sources" id="liveDataSection">
+            <div class="section-head"><h3>Live Data Sources</h3><button id="refreshSources">View All</button></div>
+            <div id="sourceList" class="source-list"><div class="empty-state">Checking provider health…</div></div>
+          </article>
+        </section>
+
+        
+        <!-- MODULE 4: EARTH SYSTEM TRENDS EXPLORER -->
+        <section id="tab-trends" class="right-panel-view">
+          <div class="trend-hero-card" style="padding:16px; background:rgba(18,18,26,0.85); border:1px solid var(--line); border-radius:var(--radius-md);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div>
+                <span class="masthead-badge" style="font-size:9px; padding:3px 8px;">NASA CHALLENGE 02 • TREND DETECTIVE</span>
+                <h3 style="font-family:var(--font-serif); font-size:16px; margin-top:4px; color:#fff;">Earth System Trend Explorer</h3>
+              </div>
+              <button id="btnRunTrends" class="action-btn-masthead" style="background:var(--mint); color:#050507; font-weight:700; border:none; padding:6px 14px; border-radius:9999px;">
+                ▶ Run Trend Analysis
+              </button>
+            </div>
+            
+            <!-- Variable Selector Pills -->
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+              <button class="reserve-pill active" data-trend-var="ndvi" onclick="toggleTrendVar(this)">🌿 NDVI (MODIS)</button>
+              <button class="reserve-pill active" data-trend-var="t2m" onclick="toggleTrendVar(this)">🌡️ Air Temp (POWER)</button>
+              <button class="reserve-pill active" data-trend-var="precipitation" onclick="toggleTrendVar(this)">🌧️ Rainfall (GPM)</button>
+              <button class="reserve-pill active" data-trend-var="lst_day" onclick="toggleTrendVar(this)">☀️ LST Skin Temp</button>
+            </div>
+
+            <!-- Time Range & Method Controls -->
+            <div style="display:flex; gap:10px; align-items:center; font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">
+              <span>Period: <b>2015 – 2024 (10 Years)</b></span>
+              <span>Method: <b>Seasonal Mann-Kendall + Sen's Slope</b></span>
+              <span>α: <b>0.05</b></span>
+            </div>
+          </div>
+
+          <!-- Trend Fingerprint Cards Container -->
+          <div id="trendFingerprintCards" style="display:flex; flex-direction:column; gap:12px;">
+            <div class="empty-state" style="padding:28px; text-align:center; background:rgba(14,14,20,0.5); border:1px dashed var(--line); border-radius:var(--radius-md);">
+              Click <b>"Run Trend Analysis"</b> to calculate real NASA Mann-Kendall statistics and Sen's slope magnitude for this region.
+            </div>
+          </div>
+
+          <!-- Grounded AI Scientific Analyst Summary -->
+          <article class="detail-card" style="padding:16px; background:rgba(12,12,18,0.9); border:1px solid var(--line-active); border-radius:var(--radius-md);">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <span style="font-size:16px;">🤖</span>
+              <strong style="font-family:var(--font-serif); font-size:14px; color:#fff;">AI Research Analyst — Scientific Interpretation</strong>
+            </div>
+            <p id="aiAnalystText" style="font-size:12.5px; line-height:1.6; color:var(--text-secondary);">
+              Run trend analysis to generate a deterministic, evidence-grounded scientific explanation adhering strictly to NASA Challenge 2 standards.
+            </p>
+          </article>
+        </section>
+
+        <!-- MODULE 5: STATISTICAL LAB -->
+        <section id="tab-statlab" class="right-panel-view">
+          <div style="padding:16px; background:rgba(18,18,26,0.85); border:1px solid var(--line); border-radius:var(--radius-md); margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span class="masthead-badge" style="font-size:9px; padding:3px 8px;">SCIENTIFIC PROOF & RIGOR</span>
+                <h3 style="font-family:var(--font-serif); font-size:16px; margin-top:4px; color:#fff;">Statistical Significance Lab</h3>
+              </div>
+              <span style="font-family:var(--font-mono); font-size:11px; color:var(--mint);">p &lt; 0.05 CRITERIA</span>
+            </div>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:6px; line-height:1.5;">
+              Non-parametric evaluation of monotonic environmental trajectories without assuming normal distribution. Includes tie-corrected variance and 95% rank confidence intervals.
+            </p>
+          </div>
+
+          <div id="statLabMetrics" style="display:flex; flex-direction:column; gap:12px;">
+            <div class="empty-state" style="padding:28px; text-align:center; background:rgba(14,14,20,0.5); border:1px dashed var(--line); border-radius:var(--radius-md);">
+              No statistical run loaded. Execute a trend detection run from the <b>Earth Trends</b> tab.
+            </div>
+          </div>
+        </section>
+
+        <!-- MODULE 3: NASA EARTHDATA CMR EXPLORER -->
+        <section id="tab-cmr" class="right-panel-view">
+          <div style="padding:16px; background:rgba(18,18,26,0.85); border:1px solid var(--line); border-radius:var(--radius-md); margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <div>
+                <span class="masthead-badge" style="font-size:9px; padding:3px 8px;">AUTHENTICATED NASA API</span>
+                <h3 style="font-family:var(--font-serif); font-size:16px; margin-top:4px; color:#fff;">NASA Earthdata CMR Discovery</h3>
+              </div>
+              <span style="font-family:var(--font-mono); font-size:10px; color:var(--mint); background:rgba(120,214,169,0.12); padding:3px 8px; border-radius:4px; border:1px solid var(--line-active);">
+                BEARER TOKEN: ACTIVE (veduxearthscope)
+              </span>
+            </div>
+            
+            <div style="display:flex; gap:8px;">
+              <input id="cmrSearchInput" placeholder="Search NASA collections (e.g. MODIS, GPM, MERRA-2, AIRS, OMI)..." value="MOD13Q1" style="flex:1; background:var(--bg-input); border:1px solid var(--line); border-radius:var(--radius-sm); padding:8px 12px; color:#fff; font-size:12.5px;" />
+              <button id="btnCmrSearch" class="action-btn-masthead" style="background:var(--mint); color:#050507; font-weight:700; border:none; padding:8px 16px; border-radius:var(--radius-sm);">
+                Search CMR
+              </button>
+            </div>
+
+            <!-- Quick Keyword Tags -->
+            <div style="display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;">
+              <button class="reserve-pill" onclick="quickCmr('MODIS')">MODIS</button>
+              <button class="reserve-pill" onclick="quickCmr('MOD13Q1')">MOD13Q1 (NDVI)</button>
+              <button class="reserve-pill" onclick="quickCmr('MOD11A2')">MOD11A2 (LST)</button>
+              <button class="reserve-pill" onclick="quickCmr('GPM')">GPM IMERG</button>
+              <button class="reserve-pill" onclick="quickCmr('MERRA-2')">MERRA-2</button>
+              <button class="reserve-pill" onclick="quickCmr('GLDAS')">GLDAS</button>
+              <button class="reserve-pill" onclick="quickCmr('AIRS')">AIRS</button>
+              <button class="reserve-pill" onclick="quickCmr('OMI')">OMI</button>
+            </div>
+          </div>
+
+          <!-- CMR Results Container -->
+          <div id="cmrResultsList" style="display:flex; flex-direction:column; gap:10px;">
+            <div class="empty-state" style="padding:24px; text-align:center; color:var(--text-muted); font-size:12px;">
+              Searching NASA Earthdata Common Metadata Repository...
+            </div>
+          </div>
+        </section>
+
+        <!-- MODULE 8: EARTH SYSTEM RELATIONSHIPS & CORRELATION MATRIX -->
+        <section id="tab-correlations" class="right-panel-view">
+          <div style="padding:16px; background:rgba(18,18,26,0.85); border:1px solid var(--line); border-radius:var(--radius-md); margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span class="masthead-badge" style="font-size:9px; padding:3px 8px;">MULTI-VARIABLE COUPLING</span>
+                <h3 style="font-family:var(--font-serif); font-size:16px; margin-top:4px; color:#fff;">Earth System Correlation Matrix</h3>
+              </div>
+            </div>
+            <div style="margin-top:8px; padding:10px 12px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); border-radius:6px; font-family:var(--font-mono); font-size:11px; color:#fcd34d;">
+              ⚠️ <b>Scientific Caveat:</b> Correlation does not establish causation. Observed synchronies must be interpreted through thermodynamic and biophysical mechanisms.
+            </div>
+          </div>
+
+          <div id="correlationCards" style="display:flex; flex-direction:column; gap:10px;">
+            <div class="empty-state" style="padding:28px; text-align:center; background:rgba(14,14,20,0.5); border:1px dashed var(--line); border-radius:var(--radius-md);">
+              Run trend analysis on multiple variables to populate the cross-variable correlation matrix.
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-before" class="right-panel-view">
+          <div class="panel-section-head"><div><h2>Before / After Investigation</h2><p>Dated Landsat (1982 onward) and Sentinel-2 scenes; actual capture dates are shown.</p></div><button id="openCompareBtn" class="small-primary">Open Full View</button></div>
+          <div class="date-grid"><label>Before<input id="beforeDate" type="date" /></label><label>After<input id="afterDate" type="date" /></label></div>
+          <button id="loadInlineCompare" class="full-primary">Load Real Satellite Comparison</button>
+          <div class="mini-note" id="compareMeta">Select or search a region.</div>
+          <div class="panel-inline-compare"><div id="beforePanelMap"></div><div id="afterPanelMap"></div></div>
+          <button id="openTime" class="full-secondary">Open Forest Time Machine</button>
+          <button id="runChangeAnalysis" class="full-secondary">Run AI Change + Evidence Analysis</button>
+          <div id="changeResult" class="result-card">No change analysis has been run yet.</div>
+        </section>
+
+        <section id="tab-analysis" class="right-panel-view">
+          <div class="panel-section-head"><div><h2>AI Forest Doctor</h2><p>Evidence fusion, warning score, probable drivers and intervention priorities.</p></div></div>
+          <button id="runEvidenceAnalysis" class="full-primary">Run Source-Backed Analysis</button>
+          <div class="analysis-grid"><article><h3>Warning</h3><div id="analysisWarning" class="big-status">—</div></article><article><h3>Coverage</h3><div id="analysisCoverage" class="big-status">—</div></article></div>
+
+          <article class="detail-card analysis-area-card">
+            <div class="analysis-section-head"><div><h3>Area & Ecosystem Snapshot</h3><p>Live/derived information for the selected area. Missing provider values remain unavailable rather than fabricated.</p></div><span id="analysisAreaFreshness" class="data-freshness">Waiting for data</span></div>
+            <div id="analysisAreaGrid" class="analysis-area-grid"><div class="empty-state">Select an area and run analysis.</div></div>
+          </article>
+
+          <article class="detail-card">
+            <div class="analysis-section-head"><div><h3>Real Data & Provenance</h3><p>Every selected-area source is listed with status, freshness, observation time and fallback semantics.</p></div><span id="dataIntegritySummary" class="data-freshness">Auditing sources…</span></div>
+            <div id="dataIntegrityPanel" class="data-integrity-panel"><div class="empty-state">Source provenance will appear after the selected area loads.</div></div>
+          </article>
+
+          <article class="detail-card">
+            <div class="analysis-section-head"><div><h3>Model Quality & Validation</h3><p>Only measured/derived validation evidence is shown. No unmeasured accuracy number is invented.</p></div><span id="modelQualitySummary" class="data-freshness">Waiting for evidence</span></div>
+            <div id="modelQualityPanel" class="model-quality-grid"><div class="empty-state">Run selected-area analysis to load optical, anomaly and cross-sensor validation evidence.</div></div>
+          </article>
+
+          <article class="detail-card">
+            <div class="analysis-section-head"><div><h3>What Is Happening Now</h3><p>Current source-backed situation summary without assuming causation.</p></div></div>
+            <div id="currentSituationPanel" class="situation-list"><div class="empty-state">Run analysis to interpret the current situation.</div></div>
+          </article>
+
+          <article class="detail-card">
+            <div class="analysis-section-head"><div><h3>How VanRakshak Responds</h3><p>Operational workflow that connects satellite evidence to field action.</p></div></div>
+            <div id="vanrakshakWorkflow" class="workflow-strip"><div class="empty-state">Response workflow will load with the selected area.</div></div>
+          </article>
+
+          <article class="detail-card impact-summary-card">
+            <div class="analysis-section-head"><div><h3>Expected Impact After Intervention</h3><p>Measurable validation targets — not guaranteed outcome percentages.</p></div></div>
+            <div id="analysisImpactSummary" class="impact-target-grid"><div class="empty-state">Run analysis to generate validation targets.</div></div>
+          </article>
+
+          <article class="detail-card"><h3>Evidence Chain</h3><div id="evidenceChain" class="evidence-list">No evidence loaded.</div></article>
+          <article class="detail-card"><div class="action-plan-head"><div><h3>Response Actions & Expected Impact</h3><p>Evidence-linked field actions with location, method, timing and success checks.</p></div></div><div id="actionPlanAnalysis" class="action-plan-list"><div class="empty-state">Run analysis to generate the action plan.</div></div></article>
+          <article class="detail-card"><h3>Forest Digital Profile</h3><div id="profilePanel">No profile loaded.</div></article>
+        </section>
+
+        <section id="tab-environment" class="right-panel-view">
+          <div class="panel-section-head"><div><h2>Environmental Intelligence</h2><p>Selected-area weather, soil chemistry/texture, terrain, fire, conservation and satellite context with source timestamps.</p></div><span id="environmentUpdated" class="data-freshness">Waiting for location</span></div>
+          <div id="environmentPanel" class="environment-grid"><div class="empty-state">Select a location to load environmental data.</div></div>
+          <button id="openLayerDrawerEnv" class="full-secondary">Open Environmental Layers</button>
+        </section>
+
+        <section id="tab-news" class="right-panel-view">
+          <div class="panel-section-head"><div><h2>News & Reports</h2><p>Contextual reporting only — never treated as proof of causation.</p></div></div>
+          <div id="newsPanel" class="news-list"><div class="empty-state">Search or select a named location.</div></div>
+          <button id="generateReportNews" class="full-primary">Generate Investigation PDF</button>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <div id="layerDrawer" class="drawer hidden">
+    <div class="drawer-head"><div><small>EARTH DATA LAYERS</small><h2>Layers & Filters</h2></div><button id="closeLayers" class="icon-btn">✕</button></div>
+    <div class="filter-grid">
+      <label>Start date <small>(optional)</small><input id="startDate" type="date" /></label>
+      <label>End date <small>(optional)</small><input id="endDate" type="date" /></label>
+      <label>Freshness<select id="freshnessFilter"><option value="">All</option><option>LIVE_NRT</option><option>DYNAMIC_RECENT</option><option>HISTORICAL</option><option>REFERENCE</option><option>FORECAST</option><option>AI_ESTIMATE</option></select></label>
+      <label>Resolution<select id="resolutionFilter"><option value="">All</option><option value="10">≤ 10 m</option><option value="30">≤ 30 m</option><option value="250">≤ 250 m</option><option value="1000">≤ 1 km</option><option value="40000">≤ 40 km</option></select></label>
+      <label>Provider / source<select id="sourceFilter"><option value="">All providers</option></select></label>
+      <label>Layer type<select id="renderFilter"><option value="">All layer types</option><option value="satellite">Satellite raster</option><option value="gibs">NASA raster</option><option value="gfw">Forest alerts</option><option value="earth_engine">Earth Engine / fallback</option><option value="point_data">Point observations</option><option value="analysis">Derived analysis</option></select></label>
+      <label>Cloud cover ≤<input id="cloudFilter" type="number" min="0" max="100" value="60" /></label>
+      <label>Alert confidence<select id="confidenceFilter"><option value="high">High</option><option value="nominal">Nominal</option><option value="low">Low</option></select></label>
+    </div>
+    <div class="filter-actions"><button id="applyFilters" class="small-primary">Apply Filters</button><button id="resetFilters" class="small-secondary">Reset</button><span id="filterStatus" class="mini-note">No temporal filter active.</span></div>
+    <div class="drawer-note">Credential-gated layers remain visibly unavailable until their provider is configured. VanRakshak does not substitute fabricated environmental values.</div>
+    <div class="source-tool"><label>🇮🇳 ISRO Bhuvan WMS layer<input id="bhuvanLayer" placeholder="Exact Bhuvan-published layer name" /></label><button id="addBhuvan" class="full-secondary">Add Bhuvan Layer</button></div>
+    <div id="layerGroups"></div>
+  </div>
+
+  <div id="compareModal" class="modal hidden">
+    <div class="modal-card compare-modal-card">
+      <div class="drawer-head"><div><small>SATELLITE CHANGE VIEW</small><h2>Before ↔ After</h2></div><button id="closeCompare" class="icon-btn">✕</button></div>
+      <div class="compare-controls"><label>Before<input id="modalBeforeDate" type="date" /></label><label>After<input id="modalAfterDate" type="date" /></label><label>Mode<select id="compareMode"><option value="true_color">True color</option><option value="false_color">False color</option><option value="ndvi">NDVI</option><option value="ndmi">NDMI</option><option value="nbr">NBR</option><option value="ndwi">NDWI</option></select></label><button id="loadCompare" class="small-primary">Load Real Scenes</button></div>
+      <div id="compareShell" class="compare-shell"><div id="compareBefore" class="compare-map"></div><div id="compareAfterWrap" class="compare-after-wrap"><div id="compareAfter" class="compare-map"></div></div><input id="compareSlider" class="compare-slider" type="range" min="5" max="95" value="50" /></div>
+      <div id="compareModalMeta" class="mini-note">Select a region first.</div>
+    </div>
+  </div>
+
+  <div id="timeModal" class="modal hidden">
+    <div class="modal-card time-modal-card">
+      <div class="drawer-head"><div><small>FOREST TIME MACHINE</small><h2>Historical Satellite Scenes</h2></div><button id="closeTime" class="icon-btn">✕</button></div>
+      <div class="compare-controls"><label>Start<input id="timeStart" type="date" /></label><label>End<input id="timeEnd" type="date" /></label><button id="loadTime" class="small-primary">Load Timeline</button><button id="playTime" class="small-secondary">▶ Play</button></div>
+      <div id="timeMap" class="time-map"></div><div id="timeCaption" class="mini-note">Choose a scene below.</div><div id="timeline" class="timeline"></div>
+    </div>
+  </div>
+
+  <div id="intelligenceModal" class="modal hidden">
+    <div class="modal-card intelligence-modal-card">
+      <div class="drawer-head"><div><small>EXPLAINABLE INTELLIGENCE</small><h2>Prediction & What-If</h2></div><button id="closeIntelligence" class="icon-btn">✕</button></div>
+      <div class="intelligence-grid">
+        <article class="detail-card prediction-card">
+          <h3>Threat Prediction</h3>
+          <p>Real Sentinel-2 trend analysis with robust ensemble forecasting, uncertainty and explanation.</p>
+          <p class="mini-note"><b>Primary judging mode:</b> Analyze Selected Forest reads real Sentinel-2 observations for the selected location and reports model uncertainty plus real temporal holdout error when enough scenes exist.</p>
+          <div class="action-row"><button id="runLocationPrediction" class="small-primary">Analyze Selected Forest — Real Sentinel Data</button></div>
+          <details class="raw-details"><summary>Advanced: project your own measured series</summary><p class="mini-note">This optional mathematical mode uses only numbers you supply and is never presented as selected-forest evidence.</p><textarea id="predictionValues" rows="2" placeholder="Enter your own measured series, separated by commas"></textarea><button id="runPrediction" class="small-secondary">Project My Measured Series</button></details>
+          <div id="predictionStatus" class="progress-banner">Ready for analysis.</div>
+          <div id="predictionSummary" class="prediction-summary"></div>
+
+          <div class="prediction-explain-grid">
+            <article class="prediction-explain-card">
+              <div class="prediction-explain-head"><span>01</span><h4>What Is Happening</h4></div>
+              <div id="predictionWhat" class="prediction-explain-body"><div class="empty-state">Run Analyze Selected Forest to interpret the current trend.</div></div>
+            </article>
+            <article class="prediction-explain-card">
+              <div class="prediction-explain-head"><span>02</span><h4>Why VanRakshak Is Flagging It</h4></div>
+              <div id="predictionWhy" class="prediction-explain-body"><div class="empty-state">Model drivers and evidence context will appear here.</div></div>
+            </article>
+            <article class="prediction-explain-card">
+              <div class="prediction-explain-head"><span>03</span><h4>What We Should Do</h4></div>
+              <div id="predictionActions" class="prediction-explain-body"><div class="empty-state">Recommended response actions will appear here.</div></div>
+            </article>
+            <article class="prediction-explain-card">
+              <div class="prediction-explain-head"><span>04</span><h4>Expected Impact</h4></div>
+              <div id="predictionImpact" class="prediction-explain-body"><div class="empty-state">Measurable expected impact targets will appear here.</div></div>
+            </article>
+          </div>
+
+          <article class="prediction-confidence-card">
+            <div class="prediction-explain-head"><span>05</span><h4>Confidence, Uncertainty & Next Verification</h4></div>
+            <div id="predictionConfidence" class="prediction-confidence-body"><div class="empty-state">Confidence and verification requirements will appear after analysis.</div></div>
+          </article>
+
+          <div id="predictionChart" class="forecast-chart"></div>
+          <div id="predictionUpdates" class="update-list"></div>
+          <details class="raw-details"><summary>Technical output</summary><pre id="predictionResult" class="mini-output">—</pre></details>
+        </article>
+        <article class="detail-card"><h3>What-If Simulator <small>HYPOTHETICAL DELTAS ON REAL BASELINE</small></h3><p class="mini-note">The baseline is recomputed from the selected forest's current evidence. Scenario deltas are user-defined and never shown as observed data.</p><div class="compact-fields"><label>Temperature Δ °C<input id="whatTemp" type="number" step="0.1" value="0"></label><label>Rainfall deficit Δ %<input id="whatRain" type="number" step="1" value="0"></label><label>Fire Δ 0–1<input id="whatFire" type="number" step="0.1" min="0" max="1" value="0"></label></div><button id="runWhatIf" class="full-primary">Simulate Scenario from Real Baseline</button><pre id="whatIfResult" class="mini-output">—</pre></article>
+      </div>
+    </div>
+  </div>
+
+  <div id="patrolModal" class="modal hidden">
+    <div class="modal-card patrol-modal-card">
+      <div class="drawer-head patrol-sticky-head">
+        <div><small>ACTION ENGINE</small><h2>Precision Patrol Planner</h2></div>
+        <button id="closePatrol" class="icon-btn" aria-label="Close patrol planner">✕</button>
+      </div>
+
+      <div id="patrolScroll" class="patrol-scroll">
+        <p class="mini-note">Build an evidence-backed field route from detected Sentinel-2 candidate polygons or enter <code>lat,lon,priority</code> stops. Road geometry uses mapped OSM/OSRM routes when available; accessibility must still be confirmed in the field.</p>
+
+        <textarea id="patrolPoints" rows="4" aria-label="Patrol stops"></textarea>
+        <div class="action-row">
+          <button id="runDetectedPatrol" class="small-primary">Build Route from Detected Hotspots</button>
+          <button id="runPatrol" class="small-secondary">Route Entered Stops</button>
+          <button id="showPatrolMainMap" class="small-secondary" disabled>⌖ View Route on Main Map</button>
+        </div>
+
+        <div id="patrolStatus" class="progress-banner">Ready to build a patrol route.</div>
+        <div id="patrolMetrics" class="prediction-summary"></div>
+
+        <article class="detail-card patrol-map-card">
+          <div class="section-head"><div><h3>Patrol Route Map</h3><p class="mini-note">Ordered stops and the returned road/track route.</p></div></div>
+          <div id="patrolRouteMap" class="patrol-route-map"></div>
+          <div id="patrolMapFallback" class="drawer-note">Build a route to show the patrol path.</div>
+        </article>
+
+        <div class="patrol-grid">
+          <article class="detail-card">
+            <h3>Priority Stops</h3>
+            <div id="patrolStops" class="patrol-stops-list"></div>
+          </article>
+
+          <article class="detail-card">
+            <h3>Field Mission Brief</h3>
+            <div id="patrolBrief" class="patrol-brief"><div class="empty-state">Build a detected-hotspot route to generate a practical field brief.</div></div>
+          </article>
+        </div>
+
+        <article class="detail-card">
+          <h3>Required Real Field Evidence</h3>
+          <div id="patrolEvidenceRequirements" class="evidence-requirements"><div class="empty-state">Evidence requirements will load with the patrol route.</div></div>
+          <label class="field-media-upload">
+            <span>Capture / Attach real patrol photo or video</span>
+            <input id="patrolEvidenceFiles" type="file" accept="image/*,video/*" capture="environment" multiple />
+          </label>
+          <textarea id="patrolEvidenceNote" rows="3" placeholder="Field note: what was actually observed, access condition, visible disturbance, stop ID…"></textarea>
+          <div id="patrolEvidencePreview" class="patrol-evidence-preview"><div class="drawer-note">No field media attached yet. Attached media are previewed locally in this browser and are not treated as verified evidence until the patrol team records matching location/time/stop metadata.</div></div>
+        </article>
+
+        <div id="patrolInstructions" class="route-instructions"></div>
+
+        <details class="raw-details"><summary>Technical route output</summary><pre id="patrolResult" class="mini-output">—</pre></details>
+      </div>
+    </div>
+  </div>
+
+  <div id="alertModal" class="modal hidden">
+    <div class="modal-card alert-modal-card">
+      <div class="drawer-head"><div><small>FIELD RESPONSE</small><h2>Patrol Alert Center</h2></div><button id="closeAlert" class="icon-btn">✕</button></div>
+      <p class="mini-note">Creates a source-backed field brief from the selected forest and comparison dates. “Probable drivers” are hypotheses for patrol verification, not confirmed causes.</p>
+      <div id="alertStatus" class="progress-banner">Open Alerts to analyze the selected forest.</div>
+      <article class="detail-card alert-queue-card">
+        <div class="section-head"><div><h3>All Active Alerts for Selected Area</h3><p class="mini-note">Source-backed alert queue ordered from urgent field issues to contextual ecological impacts.</p></div><span id="alertCount" class="action-risk">0 alerts</span></div>
+        <div id="alertQueue" class="alert-queue"><div class="empty-state">Analyzing forest change, vegetation, fire, climate, fragmentation, protected-area and human-pressure signals…</div></div>
+      </article>
+      <div id="alertSelectedPlan" class="alert-selected-plan">
+        <div class="empty-state">Select an alert to view what is happening, when it was observed, the evidence, VanRakshak response plan and expected impact.</div>
+      </div>
+      <div id="alertMetrics" class="prediction-summary"></div>
+      <div class="alert-context-grid">
+        <article class="detail-card"><h3>Where / What / When</h3><div id="alertContext" class="alert-context"><div class="empty-state">Generating incident context…</div></div></article>
+        <article class="detail-card"><h3>How It May Be Happening</h3><div id="alertDrivers" class="alert-drivers"><div class="empty-state">Waiting for evidence…</div></div></article>
+      </div>
+      <article class="detail-card alert-message-card">
+        <div class="section-head alert-message-head"><h3>Message to Patrol Team</h3><button id="refreshAlert" class="small-secondary">Regenerate from Evidence</button></div>
+        <textarea id="alertMessage" rows="18" aria-label="Patrol team alert message"></textarea>
+      </article>
+      <div class="alert-routing-row">
+        <button id="attachAlertPatrol" class="small-secondary">⌁ Build & Attach Patrol Route</button>
+        <span id="alertRouteStatus" class="mini-note">Route is optional; alert already includes the priority hotspot.</span>
+      </div>
+      <div class="alert-recipient-grid">
+        <label>Patrol WhatsApp <small>(country code + number)</small><input id="alertPhone" inputmode="tel" placeholder="e.g. 9198XXXXXXXX" /></label>
+        <label>Patrol Email <small>(optional)</small><input id="alertEmail" type="email" placeholder="patrol-team@example.org" /></label>
+      </div>
+      <div class="alert-send-grid">
+        <button id="shareAlert" class="full-primary">↗ Share / Send Alert</button>
+        <button id="whatsappAlert" class="full-secondary">WhatsApp Patrol Team</button>
+        <button id="emailAlert" class="full-secondary">Email Patrol Team</button>
+        <button id="copyAlert" class="full-secondary">Copy Message</button>
+      </div>
+      <div class="drawer-note">VanRakshak prepares the message and opens the selected communication channel. The operator reviews and confirms the final send in WhatsApp, email, or the device share sheet.</div>
+    </div>
+  </div>
+
+  <div id="aboutModal" class="modal hidden">
+    <div class="modal-card about-modal-card">
+      <div class="drawer-head"><div><small>VANRAKSHAK AI</small><h2>Satellite Forest Intelligence Command Center</h2></div><button id="closeAbout" class="icon-btn">✕</button></div>
+      <p>India-first forest monitoring, investigation and early-warning system combining Earth observation, fire, weather, protected-area, human-pressure and explainable AI evidence.</p>
+      <p class="mini-note">“Live” means newest available provider observations, not continuous video. Source timestamps, freshness and unavailable-provider states are retained.</p>
+
+      <article class="detail-card judge-proof-card">
+        <div class="analysis-section-head"><div><h3>Real-Data Guarantee</h3><p>Production values must be observed, transparently derived from observed/reference data, forecast from real observations, or explicitly marked hypothetical/unavailable.</p></div><span id="judgeFeatureCount" class="data-freshness">Checking…</span></div>
+        <div id="judgeDataStatus" class="judge-proof-grid"><div class="empty-state">Loading production capability integrity…</div></div>
+      </article>
+
+      <article class="detail-card judge-proof-card">
+        <h3>What a Judge Can Verify</h3>
+        <div class="judge-evidence-list">
+          <div><b>Problem → Action</b><span>Detect change → explain evidence → alert → patrol route → field photo/video verification → satellite recheck.</span></div>
+          <div><b>AI / Technical</b><span>Sentinel-2 multispectral screening, Sentinel-1 corroboration, explainable risk factors, ensemble forecasting, PostGIS/Redis/Celery/TiTiler and live deployment.</span></div>
+          <div><b>Model Quality</b><span>Cloud/valid-pixel diagnostics, IsolationForest overlap, cross-sensor agreement and real temporal holdout MAE/RMSE. Precision/F1/IoU are never invented without labelled ground truth.</span></div>
+          <div><b>Sustainability</b><span>Vegetation loss, fragmentation, protected-area context, climate/fire stress, carbon impact only when locally sourced, intervention targets and recovery checks.</span></div>
+          <div><b>Usability</b><span>Search any area, before/after, environment, predictions, alerts, patrol route, real field media and source-backed PDF reporting.</span></div>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
+  <script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="map-runtime.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+
