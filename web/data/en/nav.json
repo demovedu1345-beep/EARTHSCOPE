@@ -1,0 +1,16 @@
+{
+  "logo": "img/logo-en.svg",
+  "soundOn": "SOUND ON",
+  "soundOff": "SOUND OFF",
+  "temp": "Temp",
+  "top": "Top",
+  "sections": [
+    "See The Patterns",
+    "Changing Planet",
+    "Core Capabilities",
+    "Earth Variables",
+    "Statistical Rigor",
+    "Scientific Workflow",
+    "Start Investigation"
+  ]
+}
